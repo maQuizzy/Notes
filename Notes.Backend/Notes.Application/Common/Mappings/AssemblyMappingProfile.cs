@@ -18,10 +18,22 @@ namespace Notes.Application.Common.Mappings
                 i.GetGenericTypeDefinition() == typeof(IMapWith<>)))
                 .ToList();
 
-            foreach(var type in types)
+            foreach (var type in types)
             {
                 var instance = Activator.CreateInstance(type);
                 var methodInfo = type.GetMethod("Mapping");
+
+                if(methodInfo == null)
+                {
+                    var mapInterface = type.GetInterfaces()
+                        .FirstOrDefault(w => w.Name.Remove(w.Name.IndexOf('`')) == "IMapWith");
+
+                    var genericType = mapInterface.GetGenericArguments()[0];
+
+                    var mapType = typeof(IMapWith<>).MakeGenericType(genericType);
+                    methodInfo = mapType.GetMethod("Mapping");
+                }
+
                 methodInfo?.Invoke(instance, new object[] { this });
             }
         }
